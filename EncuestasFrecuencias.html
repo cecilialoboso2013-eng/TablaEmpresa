@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Analizador de Encuestas y Tablas de Frecuencia - 7.º Básico</title>
+<style>
+:root{
+  --bg:#f4f7fb; --card:#ffffff; --ink:#172235; --muted:#667085; --line:#dbe3ec;
+  --blue:#194f86; --green:#1f7352; --red:#a43a3a; --gold:#a96917;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,#173d68,#276aa7);color:#fff;padding:25px 18px}
+.header-inner{max-width:1450px;margin:auto;display:flex;justify-content:space-between;gap:20px;align-items:center}
+h1{margin:0;font-size:30px}.subtitle{margin-top:7px;opacity:.92;font-size:16px}
+.grade{background:#ffffff1a;border:1px solid #ffffff48;border-radius:11px;padding:10px 14px;font-weight:700}
+main{max-width:1450px;margin:20px auto 50px;padding:0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px;box-shadow:0 4px 18px #162c4510}
+.setup{display:grid;grid-template-columns:1fr 1.2fr .6fr;gap:12px}
+label{font-weight:700;font-size:14px;display:block;margin:0 0 5px}
+input,select,button{font:inherit}
+input[type="text"],input[type="number"],select{width:100%;padding:10px 11px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}
+button{border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer}
+.primary{background:var(--blue);color:#fff}.secondary{background:#e8eef5;color:#244668}
+.good{background:var(--green);color:#fff}.danger{background:#f8e7e7;color:#8f3030}.gold{background:#f5ead8;color:#845315}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.note{background:#eef6ff;border-left:4px solid #4386c5;padding:10px 12px;border-radius:8px;font-size:14px;line-height:1.45}
+.warning{background:#fff5e5;border-left:4px solid #d4932c;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.45;margin-top:10px}
+.summary{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin:15px 0}
+.stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;text-align:center;padding:10px}
+.stat span{font-size:13px;color:var(--muted)}.stat strong{display:block;font-size:22px;margin-top:4px}
+.section-title{font-size:21px;font-weight:800;margin:22px 0 9px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:white}
+table{border-collapse:collapse;width:100%;min-width:1120px}
+th,td{border-right:1px solid #e4e9ef;border-bottom:1px solid #e4e9ef;padding:8px;text-align:center;vertical-align:middle}
+th{background:#eaf1f8;font-size:13px;position:sticky;top:0;z-index:1}
+th small{display:block;color:#596777;font-weight:500;margin-top:2px}
+td input{min-width:100px}.cat-input{min-width:170px!important}.fi-input{width:90px!important;text-align:center}
+.total-row td{font-weight:800;background:#f3f6f9}.output{font-weight:700}.empty{color:#a3acb8}
+.actions-cell{width:66px}.del{background:#f8e5e5;color:#9a3333;padding:6px 9px}
+.result-title{font-size:20px;font-weight:800;margin:0 0 5px}.result-sub{color:var(--muted);margin-bottom:12px}
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.analysis-box{background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px}
+.analysis-box h3{margin:0 0 9px;font-size:18px}.analysis-list{margin:0;padding-left:20px;line-height:1.55}.analysis-list li{margin-bottom:7px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chart-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:15px;min-height:480px}
+.chart-card h3{margin:0 0 3px}.chart-card p{margin:0 0 10px;color:var(--muted);font-size:13px}
+.canvas-wrap{position:relative;width:100%;height:390px}canvas{width:100%;height:100%;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.legend-item{display:flex;align-items:center;gap:6px;font-size:12px}.legend-color{width:13px;height:13px;border-radius:3px}
+.check{margin-top:14px;padding:11px;border-radius:10px;display:none}
+.check.ok{display:block;background:#e7f5ed;border:1px solid #b9dfca;color:#165c41}
+.check.warn{display:block;background:#fff4df;border:1px solid #efd5a5;color:#815416}
+.highlight{background:#f0f6fc;border:1px solid #d7e6f6;border-radius:12px;padding:12px;line-height:1.5}
+footer{max-width:1450px;margin:auto;padding:0 18px 35px;color:var(--muted);font-size:13px}
+@media(max-width:1000px){.setup,.analysis-grid,.chart-grid{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.summary{grid-template-columns:1fr}.header-inner{flex-direction:column;align-items:flex-start}h1{font-size:25px}}
+@media print{
+  body{background:white} header,.toolbar,.note,.warning,.actions-cell,.del,.setup button{display:none!important}
+  main{max-width:none;margin:0;padding:0}.card{box-shadow:none;border:0;padding:0}
+  .table-wrap{overflow:visible}.chart-grid,.analysis-grid{grid-template-columns:1fr 1fr}.canvas-wrap{height:330px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div>
+      <h1>Analizador de Encuestas y Tablas de Frecuencia</h1>
+      <div class="subtitle">Empresa · encuesta · tabla de frecuencias · interpretación · gráfico de barras · gráfico circular</div>
+    </div>
+    <div class="grade">Matemática · 7.º Básico</div>
+  </div>
+</header>
+
+<main>
+<section class="card">
+  <div class="setup">
+    <div>
+      <label for="company">Nombre de la empresa o proyecto</label>
+      <input id="company" type="text" placeholder="Ej.: Dulce Momento">
+    </div>
+    <div>
+      <label for="question">¿Qué se estudió en la encuesta?</label>
+      <input id="question" type="text" placeholder="Ej.: ¿Qué sabor de helado prefieres?">
+    </div>
+    <div>
+      <label for="dataType">Tipo de variable</label>
+      <select id="dataType">
+        <option value="nominal">Cualitativa nominal</option>
+        <option value="ordinal">Cualitativa ordinal</option>
+        <option value="discrete">Cuantitativa discreta</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="setup" style="margin-top:12px;grid-template-columns:.7fr 1fr 1fr">
+    <div>
+      <label for="rowCount">N.º de categorías</label>
+      <input id="rowCount" type="number" min="2" max="20" value="4">
+    </div>
+    <div><label>&nbsp;</label><button class="primary" style="width:100%" onclick="createRows()">Crear tabla</button></div>
+    <div><label>&nbsp;</label><button class="gold" style="width:100%" onclick="loadExample()">Cargar ejemplo de empresa</button></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="secondary" onclick="addRow()">+ Agregar categoría</button>
+    <button class="good" onclick="calculate()">Calcular y generar análisis</button>
+    <button class="secondary" onclick="window.print()">Imprimir / Guardar PDF</button>
+    <button class="danger" onclick="resetAll()">Reiniciar</button>
+  </div>
+
+  <div class="note">
+    Escribe cada <strong>opción o categoría</strong> de la encuesta y su <strong>frecuencia absoluta (fi)</strong>.
+    El programa calculará <strong>Fi, fr, Fr, fr% y Fr%</strong>, generará las interpretaciones y representará los resultados en un gráfico de barras y un gráfico circular.
+  </div>
+  <div id="accumNote" class="warning">
+    En una variable cualitativa nominal (por ejemplo, sabores o productos preferidos), las frecuencias acumuladas dependen del orden en que escribas las categorías. Se calculan igualmente para practicar la tabla completa.
+  </div>
+
+  <div class="summary">
+    <div class="stat"><span>Tamaño de la muestra</span><strong id="nValue">n = 0</strong></div>
+    <div class="stat"><span>Categorías</span><strong id="kValue">0</strong></div>
+    <div class="stat"><span>Suma de fr</span><strong id="frSum">0</strong></div>
+    <div class="stat"><span>Suma de fr%</span><strong id="pctSum">0%</strong></div>
+  </div>
+
+  <div class="result-title" id="displayTitle">Tabla de distribución de frecuencias</div>
+  <div class="result-sub">Ingresa las categorías y sus frecuencias absolutas.</div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Opción / categoría</th>
+          <th>fi<small>Frecuencia absoluta</small></th>
+          <th>Fi<small>Frecuencia absoluta acumulada</small></th>
+          <th>fr - fracción<small>fi / n simplificada</small></th>
+          <th>fr - decimal<small>fi ÷ n</small></th>
+          <th>Fr - decimal<small>Fi ÷ n</small></th>
+          <th>fr%<small>Frecuencia relativa porcentual</small></th>
+          <th>Fr%<small>Frecuencia relativa acumulada porcentual</small></th>
+          <th class="actions-cell">Acción</th>
+        </tr>
+      </thead>
+      <tbody id="freqBody"></tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td>Total</td><td id="totalFi">0</td><td id="totalFiCum">—</td><td id="totalFrFrac">0/1</td>
+          <td id="totalFrDec">0</td><td id="totalFrCumDec">—</td><td id="totalFrPct">0%</td><td id="totalFrCumPct">—</td><td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div id="validation" class="check"></div>
+
+  <div class="section-title">Interpretación de los resultados</div>
+  <div class="analysis-grid">
+    <div class="analysis-box">
+      <h3>1. Lectura desde la frecuencia absoluta (fi)</h3>
+      <div id="absoluteAnalysis" class="highlight">Calcula la tabla para obtener la interpretación.</div>
+    </div>
+    <div class="analysis-box">
+      <h3>2. Conclusiones para la empresa</h3>
+      <div id="businessAnalysis" class="highlight">Aquí aparecerán las conclusiones principales de la encuesta.</div>
+    </div>
+  </div>
+
+  <div class="section-title">Representación gráfica</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Gráfico de barras</h3>
+      <p>Representa la frecuencia absoluta (fi) de cada opción de la encuesta.</p>
+      <div class="canvas-wrap"><canvas id="barChart"></canvas></div>
+      <div id="barInterpretation" class="highlight">El gráfico se generará al calcular la tabla.</div>
+    </div>
+    <div class="chart-card">
+      <h3>Gráfico circular</h3>
+      <p>Cada sector representa el porcentaje de preferencias correspondiente a cada categoría.</p>
+      <div class="canvas-wrap"><canvas id="pieChart"></canvas></div>
+      <div id="legend" class="legend"></div>
+      <div id="pieInterpretation" class="highlight" style="margin-top:10px">El gráfico se generará al calcular la tabla.</div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  Herramienta para el proyecto de creación de empresa: organización, representación e interpretación de datos de una encuesta.
+</footer>
+
+<script>
+const body=document.getElementById('freqBody');
+const palette=['#4E79A7','#F28E2B','#E15759','#76B7B2','#59A14F','#EDC948','#B07AA1','#FF9DA7','#9C755F','#BAB0AC','#5B8FF9','#61DDAA','#65789B','#F6BD16','#7262FD','#78D3F8','#9661BC','#F6903D','#269A99','#A0D911'];
+
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a||1}
+function fraction(num,den){if(!den)return'—';const g=gcd(num,den);return `${num/g}/${den/g}`}
+function dec(x,digits=4){if(!Number.isFinite(x))return'—';return x.toFixed(digits).replace(/0+$/,'').replace(/\.$/,'').replace('.',',')}
+function pct(x){if(!Number.isFinite(x))return'—';return (x*100).toFixed(2).replace(/0+$/,'').replace(/\.$/,'').replace('.',',')+'%'}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+
+function makeRow(category='',fi=''){
+ const tr=document.createElement('tr');
+ tr.innerHTML=`
+ <td><input class="cat-input" type="text" value="${esc(category)}" placeholder="Opción / categoría"></td>
+ <td><input class="fi-input" type="number" min="0" step="1" value="${fi}" placeholder="0"></td>
+ <td class="output Fi empty">—</td><td class="output frFrac empty">—</td><td class="output frDec empty">—</td>
+ <td class="output FrDec empty">—</td><td class="output frPct empty">—</td><td class="output FrPct empty">—</td>
+ <td class="actions-cell"><button class="del" onclick="removeRow(this)">✕</button></td>`;
+ tr.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{clearOutputs();saveState()}));
+ return tr;
+}
+function createRows(){
+ const n=Math.max(2,Math.min(20,parseInt(document.getElementById('rowCount').value)||4));
+ body.innerHTML='';for(let i=0;i<n;i++)body.appendChild(makeRow());
+ clearOutputs();saveState();
+}
+function addRow(){if(body.rows.length>=20)return;body.appendChild(makeRow());document.getElementById('rowCount').value=body.rows.length;clearOutputs();saveState()}
+function removeRow(btn){if(body.rows.length<=2){alert('La tabla debe tener al menos 2 categorías.');return}btn.closest('tr').remove();document.getElementById('rowCount').value=body.rows.length;clearOutputs();saveState()}
+function setOut(row,selector,value){const td=row.querySelector(selector);td.textContent=value;td.classList.remove('empty')}
+
+function clearOutputs(){
+ document.querySelectorAll('.output').forEach(td=>{td.textContent='—';td.classList.add('empty')});
+ document.getElementById('nValue').textContent='n = 0';document.getElementById('kValue').textContent=body.rows.length;
+ document.getElementById('frSum').textContent='0';document.getElementById('pctSum').textContent='0%';
+ document.getElementById('totalFi').textContent='0';document.getElementById('totalFiCum').textContent='—';
+ document.getElementById('totalFrFrac').textContent='0/1';document.getElementById('totalFrDec').textContent='0';
+ document.getElementById('totalFrCumDec').textContent='—';document.getElementById('totalFrPct').textContent='0%';document.getElementById('totalFrCumPct').textContent='—';
+ document.getElementById('absoluteAnalysis').textContent='Calcula la tabla para obtener la interpretación.';
+ document.getElementById('businessAnalysis').textContent='Aquí aparecerán las conclusiones principales de la encuesta.';
+ document.getElementById('barInterpretation').textContent='El gráfico se generará al calcular la tabla.';
+ document.getElementById('pieInterpretation').textContent='El gráfico se generará al calcular la tabla.';
+ document.getElementById('legend').innerHTML='';clearCanvas('barChart');clearCanvas('pieChart');
+ const v=document.getElementById('validation');v.className='check';v.textContent='';updateTitle();updateAccumNote();
+}
+function updateTitle(){
+ const company=document.getElementById('company').value.trim(),q=document.getElementById('question').value.trim();
+ let title='Tabla de distribución de frecuencias';if(q)title+=': '+q;if(company)title+=' · '+company;
+ document.getElementById('displayTitle').textContent=title;
+}
+function updateAccumNote(){document.getElementById('accumNote').style.display=document.getElementById('dataType').value==='nominal'?'block':'none'}
+
+function calculate(){
+ const rows=[...body.rows];
+ const data=rows.map((r,i)=>({cat:r.querySelector('.cat-input').value.trim()||`Categoría ${i+1}`,fi:parseInt(r.querySelector('.fi-input').value)}));
+ if(data.some(x=>!Number.isInteger(x.fi)||x.fi<0)){showValidation('warn','Revisa la columna fi. Todas las frecuencias deben ser enteros mayores o iguales que 0.');return}
+ const n=data.reduce((s,x)=>s+x.fi,0);if(n<=0){showValidation('warn','La suma de las frecuencias absolutas debe ser mayor que 0.');return}
+ let cum=0;
+ rows.forEach((r,i)=>{const fi=data[i].fi;cum+=fi;const fr=fi/n,Fr=cum/n;
+   setOut(r,'.Fi',cum);setOut(r,'.frFrac',fraction(fi,n));setOut(r,'.frDec',dec(fr));setOut(r,'.FrDec',dec(Fr));setOut(r,'.frPct',pct(fr));setOut(r,'.FrPct',pct(Fr))
+ });
+ document.getElementById('nValue').textContent=`n = ${n}`;document.getElementById('kValue').textContent=data.length;
+ document.getElementById('frSum').textContent='1';document.getElementById('pctSum').textContent='100%';
+ document.getElementById('totalFi').textContent=n;document.getElementById('totalFiCum').textContent=n;
+ document.getElementById('totalFrFrac').textContent='1/1';document.getElementById('totalFrDec').textContent='1';
+ document.getElementById('totalFrCumDec').textContent='1';document.getElementById('totalFrPct').textContent='100%';document.getElementById('totalFrCumPct').textContent='100%';
+ updateTitle();generateAnalysis(data,n);drawBar(data,n);drawPie(data,n);showValidation('ok',`Tabla calculada correctamente. La encuesta reúne ${n} respuestas.`);saveState();
+}
+function showValidation(type,msg){const v=document.getElementById('validation');v.className='check '+type;v.textContent=msg}
+
+function generateAnalysis(data,n){
+ const max=Math.max(...data.map(x=>x.fi)),min=Math.min(...data.map(x=>x.fi));
+ const maxCats=data.filter(x=>x.fi===max).map(x=>x.cat),minCats=data.filter(x=>x.fi===min).map(x=>x.cat);
+ let lis='<ul class="analysis-list">';
+ data.forEach(x=>{lis+=`<li><strong>${esc(x.cat)}</strong>: fue seleccionada por <strong>${x.fi} ${x.fi===1?'persona':'personas'}</strong>, lo que representa <strong>${pct(x.fi/n)}</strong> del total.</li>`});
+ lis+='</ul>';document.getElementById('absoluteAnalysis').innerHTML=lis;
+ const company=document.getElementById('company').value.trim()||'la empresa';
+ let txt=`<ul class="analysis-list"><li>La opción con mayor preferencia es <strong>${maxCats.map(esc).join(' / ')}</strong>, con <strong>${max}</strong> respuestas (${pct(max/n)}).</li>`;
+ txt+=`<li>La opción con menor frecuencia es <strong>${minCats.map(esc).join(' / ')}</strong>, con <strong>${min}</strong> respuestas (${pct(min/n)}).</li>`;
+ if(maxCats.length===1)txt+=`<li>Para <strong>${esc(company)}</strong>, estos datos sugieren considerar <strong>${esc(maxCats[0])}</strong> como una alternativa prioritaria, porque concentra la mayor preferencia de la muestra.</li>`;
+ else txt+=`<li>Existe un empate en la mayor preferencia; <strong>${esc(company)}</strong> debería considerar más de una alternativa antes de tomar una decisión.</li>`;
+ txt+=`<li>La muestra analizada contiene <strong>${n}</strong> respuestas en total.</li></ul>`;
+ document.getElementById('businessAnalysis').innerHTML=txt;
+ document.getElementById('barInterpretation').innerHTML=`En el gráfico de barras, la barra más alta corresponde a <strong>${maxCats.map(esc).join(' / ')}</strong>. La altura de cada barra permite comparar cuántas personas eligieron cada opción.`;
+ document.getElementById('pieInterpretation').innerHTML=`En el gráfico circular, cada sector representa una parte del <strong>100%</strong> de las respuestas. El sector más grande corresponde a <strong>${maxCats.map(esc).join(' / ')}</strong> con <strong>${pct(max/n)}</strong>.`;
+}
+function clearCanvas(id){const c=document.getElementById(id),ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height)}
+function prepCanvas(id){
+ const canvas=document.getElementById(id),rect=canvas.parentElement.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+ canvas.width=Math.max(500,Math.floor(rect.width*dpr));canvas.height=Math.max(340,Math.floor(rect.height*dpr));
+ const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w:rect.width,h:rect.height};
+}
+function drawBar(data,n){
+ const {ctx,w,h}=prepCanvas('barChart');ctx.clearRect(0,0,w,h);
+ const left=55,right=18,top=24,bottom=85,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(...data.map(x=>x.fi),1);
+ ctx.strokeStyle='#26384b';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,h-bottom);ctx.lineTo(w-right,h-bottom);ctx.stroke();
+ const ySteps=Math.min(max,10);ctx.font='12px Calibri';ctx.fillStyle='#566373';ctx.textAlign='right';
+ for(let i=0;i<=ySteps;i++){const val=Math.round(max*i/ySteps),y=h-bottom-plotH*i/ySteps;ctx.strokeStyle='#e4e9ef';ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();ctx.fillText(val,left-8,y+4)}
+ const slot=plotW/data.length,bw=Math.min(70,slot*.62);
+ data.forEach((x,i)=>{const bh=x.fi/max*plotH,px=left+i*slot+(slot-bw)/2,py=h-bottom-bh;ctx.fillStyle=palette[i%palette.length];ctx.fillRect(px,py,bw,bh);ctx.fillStyle='#172235';ctx.textAlign='center';ctx.font='700 13px Calibri';ctx.fillText(x.fi,px+bw/2,py-6);ctx.save();ctx.translate(px+bw/2,h-bottom+12);ctx.rotate(-Math.PI/5);ctx.textAlign='right';ctx.font='12px Calibri';let label=x.cat.length>18?x.cat.slice(0,17)+'…':x.cat;ctx.fillText(label,0,0);ctx.restore()});
+}
+function drawPie(data,n){
+ const {ctx,w,h}=prepCanvas('pieChart');ctx.clearRect(0,0,w,h);const cx=w/2,cy=h/2-5,r=Math.min(w,h)*.34;let start=-Math.PI/2;
+ const legend=document.getElementById('legend');legend.innerHTML='';
+ data.forEach((x,i)=>{const angle=2*Math.PI*(x.fi/n),end=start+angle;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,end);ctx.closePath();ctx.fillStyle=palette[i%palette.length];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();
+ if(x.fi>0){const mid=(start+end)/2,tx=cx+Math.cos(mid)*r*.65,ty=cy+Math.sin(mid)*r*.65;ctx.fillStyle='#132033';ctx.font='700 13px Calibri';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(pct(x.fi/n),tx,ty)}
+ const li=document.createElement('span');li.className='legend-item';li.innerHTML=`<span class="legend-color" style="background:${palette[i%palette.length]}"></span>${esc(x.cat)} (${pct(x.fi/n)})`;legend.appendChild(li);start=end});
+}
+function loadExample(){
+ document.getElementById('company').value='Sabores del Valle';document.getElementById('question').value='¿Qué sabor de jugo prefieres?';document.getElementById('dataType').value='nominal';
+ const vals=[['Frutilla',12],['Naranja',18],['Piña',8],['Manzana',12]];body.innerHTML='';vals.forEach(([c,f])=>body.appendChild(makeRow(c,f)));document.getElementById('rowCount').value=vals.length;calculate();
+}
+function resetAll(){
+ if(!confirm('¿Borrar todos los datos y comenzar nuevamente?'))return;
+ localStorage.removeItem('encuestaEmpresa7');document.getElementById('company').value='';document.getElementById('question').value='';document.getElementById('dataType').value='nominal';document.getElementById('rowCount').value=4;createRows();
+}
+function saveState(){
+ const s={company:document.getElementById('company').value,question:document.getElementById('question').value,type:document.getElementById('dataType').value,rows:[...body.rows].map(r=>({cat:r.querySelector('.cat-input').value,fi:r.querySelector('.fi-input').value}))};localStorage.setItem('encuestaEmpresa7',JSON.stringify(s));
+}
+function loadState(){
+ try{const raw=localStorage.getItem('encuestaEmpresa7');if(!raw)return false;const s=JSON.parse(raw);if(!Array.isArray(s.rows)||s.rows.length<2)return false;document.getElementById('company').value=s.company||'';document.getElementById('question').value=s.question||'';document.getElementById('dataType').value=s.type||'nominal';document.getElementById('rowCount').value=s.rows.length;body.innerHTML='';s.rows.forEach(x=>body.appendChild(makeRow(x.cat,x.fi)));clearOutputs();return true}catch(e){return false}}
+['company','question'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{clearOutputs();saveState()}));
+document.getElementById('dataType').addEventListener('change',()=>{clearOutputs();saveState()});
+window.addEventListener('resize',()=>{const rows=[...body.rows],data=rows.map((r,i)=>({cat:r.querySelector('.cat-input').value.trim()||`Categoría ${i+1}`,fi:parseInt(r.querySelector('.fi-input').value)}));if(data.length&&data.every(x=>Number.isInteger(x.fi)&&x.fi>=0)&&data.reduce((s,x)=>s+x.fi,0)>0){const n=data.reduce((s,x)=>s+x.fi,0);drawBar(data,n);drawPie(data,n)}});
+window.addEventListener('load',()=>{if(!loadState())createRows()});
+</script>
+</body>
+</html>
